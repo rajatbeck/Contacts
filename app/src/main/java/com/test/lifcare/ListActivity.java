@@ -159,7 +159,7 @@ public class ListActivity extends AppCompatActivity implements LoaderCallbacks<C
 
                 } else {
                     BottomSheetDialogFragment bottomSheetDialogFragment = new BottomEditSheet().getInstance(listAdapter.getItem(position),listAdapter.getNumber(position));
-                    bottomSheetDialogFragment.setCancelable(true);
+                    bottomSheetDialogFragment.setCancelable(false);
                     bottomSheetDialogFragment.show(getSupportFragmentManager(), bottomSheetDialogFragment.getTag());
                 }
             }

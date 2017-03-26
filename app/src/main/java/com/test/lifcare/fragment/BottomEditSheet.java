@@ -11,6 +11,7 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 
 import com.test.lifcare.R;
 
@@ -59,6 +60,7 @@ public class BottomEditSheet extends BottomSheetDialogFragment {
     private EditText name, number;
     private Button btnUpdate;
     private String oldName, oldNumber;
+    private TextView cancel;
 
     @Override
     public void setupDialog(final Dialog dialog, int style) {
@@ -78,6 +80,14 @@ public class BottomEditSheet extends BottomSheetDialogFragment {
         name = (EditText) contentView.findViewById(R.id.input_name);
         number = (EditText) contentView.findViewById(R.id.input_number);
         btnUpdate = (Button) contentView.findViewById(R.id.btn_update);
+        cancel = (TextView) contentView.findViewById(R.id.cancel);
+        cancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                onUpdate.update(updateClicked, name.getText().toString().trim(), number.getText().toString().trim());
+                dismiss();
+            }
+        });
 
         name.setText(oldName);
         number.setText(oldNumber);
