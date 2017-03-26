@@ -96,8 +96,13 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.ListViewHolder
 
     }
 
+    public void removeAt(int position) {
+        mSortedList.removeItemAt(position);
+        notifyItemRemoved(position);
+        notifyItemRangeChanged(position, mSortedList.size());
+    }
 
-    private String getItem(int position) {
+    public String getItem(int position) {
         return mSortedList.get(position).getName();
     }
 
