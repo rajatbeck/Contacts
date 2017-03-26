@@ -17,8 +17,11 @@ import android.graphics.RectF;
 import android.os.RemoteException;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
+import android.support.design.widget.BottomSheetBehavior;
+import android.support.design.widget.BottomSheetDialogFragment;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.Snackbar;
+import android.support.design.widget.TextInputLayout;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.app.LoaderManager.LoaderCallbacks;
@@ -52,6 +55,7 @@ import android.widget.Toast;
 import com.futuremind.recyclerviewfastscroll.FastScroller;
 import com.test.lifcare.adapter.ListAdapter;
 import com.test.lifcare.custom.SimpleDividerItemDecoration;
+import com.test.lifcare.fragment.BottomEditSheet;
 import com.test.lifcare.model.Data;
 import com.test.lifcare.model.Phone;
 
@@ -67,7 +71,7 @@ import java.util.Set;
 import static android.Manifest.permission.READ_CONTACTS;
 
 
-public class ListActivity extends AppCompatActivity implements LoaderCallbacks<Cursor> {
+public class ListActivity extends AppCompatActivity implements LoaderCallbacks<Cursor>,BottomEditSheet.OnUpdate {
 
 
     private static final int REQUEST_READ_CONTACTS = 0;
@@ -79,12 +83,12 @@ public class ListActivity extends AppCompatActivity implements LoaderCallbacks<C
             return a.getName().toLowerCase().compareTo(b.getName().toLowerCase());
         }
     };
-    private Snackbar mSnackbar;
     private CoordinatorLayout coordinatorLayout;
     private RecyclerView mRecyclerView;
     private FastScroller fastScroller;
     private ListAdapter listAdapter;
     private List<Data> mDataList;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -107,7 +111,9 @@ public class ListActivity extends AppCompatActivity implements LoaderCallbacks<C
 //        fastScroller = (FastScroller) findViewById(R.id.fastscroll);
         mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         mRecyclerView.addItemDecoration(new SimpleDividerItemDecoration(this));
+
     }
+
 
     private void setAdapter() {
         listAdapter = new ListAdapter(this, ALPHABETICAL_COMPARATOR);
@@ -118,7 +124,6 @@ public class ListActivity extends AppCompatActivity implements LoaderCallbacks<C
         if (!mayRequestContacts()) {
             return;
         }
-
         getLoaderManager().initLoader(0, null, this);
     }
 
@@ -153,9 +158,9 @@ public class ListActivity extends AppCompatActivity implements LoaderCallbacks<C
                     alertDialog.show();
 
                 } else {
-                    //removeView();
-//                    editBrokerContacts(position);
-
+                    BottomSheetDialogFragment bottomSheetDialogFragment = new BottomEditSheet().getInstance(listAdapter.getItem(position),listAdapter.getNumber(position));
+                    bottomSheetDialogFragment.setCancelable(true);
+                    bottomSheetDialogFragment.show(getSupportFragmentManager(), bottomSheetDialogFragment.getTag());
                 }
             }
 
@@ -209,6 +214,29 @@ public class ListActivity extends AppCompatActivity implements LoaderCallbacks<C
             }
         } catch (RemoteException e) {
 
+        }
+    }
+    private boolean updateContactList(String name,String newPhoneNumber){
+        ArrayList<ContentProviderOperation> ops = new ArrayList<>();
+
+        String where = ContactsContract.Data.DISPLAY_NAME + " = ? AND " +
+                ContactsContract.Data.MIMETYPE + " = ? AND " +
+                String.valueOf(ContactsContract.CommonDataKinds.Phone.TYPE) + " = ? ";
+
+        String[] params = new String[] {name,
+                ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE,
+                String.valueOf(ContactsContract.CommonDataKinds.Phone.TYPE_HOME)};
+        ops.add(ContentProviderOperation.newUpdate(ContactsContract.Data.CONTENT_URI)
+                .withSelection(where, params)
+                .withValue(ContactsContract.CommonDataKinds.Phone.DATA, newPhoneNumber)
+                .build());
+        try {
+            getContentResolver().applyBatch(ContactsContract.AUTHORITY, ops);
+            return true;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
         }
     }
 
@@ -282,6 +310,7 @@ public class ListActivity extends AppCompatActivity implements LoaderCallbacks<C
                 cursor.moveToNext();
             }
             listAdapter.add(mDataList);
+            BottomEditSheet.setOnUpdate(this);
 //            listAdapter.notifyDataSetChanged();
         }
     }
@@ -363,5 +392,15 @@ public class ListActivity extends AppCompatActivity implements LoaderCallbacks<C
     }
 
 
+    @Override
+    public Void update(boolean updt, String name, String number) {
+        if(!updt){
+            listAdapter.notifyDataSetChanged();
+        }
+        else {
+            updateContactList(name,number);
+        }
+        return null;
+    }
 }
 

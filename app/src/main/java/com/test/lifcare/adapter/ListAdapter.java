@@ -105,6 +105,14 @@ public class ListAdapter extends RecyclerView.Adapter<ListAdapter.ListViewHolder
     public String getItem(int position) {
         return mSortedList.get(position).getName();
     }
+    public String getNumber(int position){
+        if(mSortedList.get(position).getmPhone()!=null){
+            if(mSortedList.get(position).getmPhone().size()!=0){
+                return mSortedList.get(position).getmPhone().get(0).getPhone();
+            }
+        }
+        return null;
+    }
 
     @Override
     public int getItemCount() {
