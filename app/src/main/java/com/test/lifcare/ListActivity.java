@@ -69,12 +69,14 @@ import java.util.List;
 import java.util.Set;
 
 import static android.Manifest.permission.READ_CONTACTS;
+import static android.Manifest.permission.WRITE_CONTACTS;
 
 
 public class ListActivity extends AppCompatActivity implements LoaderCallbacks<Cursor>,BottomEditSheet.OnUpdate {
 
 
     private static final int REQUEST_READ_CONTACTS = 0;
+    private static final int REQUEST_WRITE_CONTACTS = 1;
     private static final String TAG = ListActivity.class.getSimpleName();
     private Paint p = new Paint();
     private static final Comparator<Data> ALPHABETICAL_COMPARATOR = new Comparator<Data>() {
@@ -124,6 +126,9 @@ public class ListActivity extends AppCompatActivity implements LoaderCallbacks<C
         if (!mayRequestContacts()) {
             return;
         }
+        if(!mayWriteContacts()){
+            return;
+        }
         getLoaderManager().initLoader(0, null, this);
     }
 
@@ -132,7 +137,7 @@ public class ListActivity extends AppCompatActivity implements LoaderCallbacks<C
 
             @Override
             public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, RecyclerView.ViewHolder target) {
-                return true;
+                return false;
             }
 
             @Override
@@ -262,6 +267,28 @@ public class ListActivity extends AppCompatActivity implements LoaderCallbacks<C
         }
         return false;
     }
+    private boolean mayWriteContacts() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            return true;
+        }
+        if (checkSelfPermission(WRITE_CONTACTS) == PackageManager.PERMISSION_GRANTED) {
+            return true;
+        }
+        if (shouldShowRequestPermissionRationale(WRITE_CONTACTS)) {
+            Snackbar.make(coordinatorLayout, R.string.permission_rationale, Snackbar.LENGTH_INDEFINITE)
+                    .setAction(android.R.string.ok, new View.OnClickListener() {
+                        @Override
+                        @TargetApi(Build.VERSION_CODES.M)
+                        public void onClick(View v) {
+                            requestPermissions(new String[]{WRITE_CONTACTS}, REQUEST_WRITE_CONTACTS);
+                        }
+                    });
+        } else {
+            requestPermissions(new String[]{WRITE_CONTACTS}, REQUEST_WRITE_CONTACTS);
+        }
+        return false;
+    }
+
 
     /**
      * Callback received when a permissions request has been completed.
@@ -270,6 +297,11 @@ public class ListActivity extends AppCompatActivity implements LoaderCallbacks<C
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
                                            @NonNull int[] grantResults) {
         if (requestCode == REQUEST_READ_CONTACTS) {
+            if (grantResults.length == 1 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                populateAutoComplete();
+            }
+        }
+        if (requestCode == REQUEST_WRITE_CONTACTS) {
             if (grantResults.length == 1 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 populateAutoComplete();
             }
